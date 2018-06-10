@@ -1,6 +1,0 @@
-D:\GitHub\MyQueue\bin\Debug\MyQueue.exe
-D:\GitHub\MyQueue\bin\Debug\MyQueue.pdb
-D:\GitHub\MyQueue\obj\Debug\MyQueue.csprojResolveAssemblyReference.cache
-D:\GitHub\MyQueue\obj\Debug\MyQueue.csproj.CoreCompileInputs.cache
-D:\GitHub\MyQueue\obj\Debug\MyQueue.exe
-D:\GitHub\MyQueue\obj\Debug\MyQueue.pdb
