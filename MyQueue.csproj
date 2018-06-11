@@ -38,6 +38,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LockUtil.cs" />
     <Compile Include="MyQueue.cs" />
     <Compile Include="PerformanceTests.cs" />
     <Compile Include="Program.cs" />

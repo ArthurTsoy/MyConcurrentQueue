@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace MyQueue
 {
-    public sealed class MyQueue<T> : IEnumerable<T>
+    public sealed class MyQueue<T> 
     {
+        public int Count { get; private set; }
+        
         private const int DefaultCapacity = 4;
         
-        public int Count { get; private set; }
+        private readonly ReaderWriterLockSlim @lock = new ReaderWriterLockSlim();
+        
         private int capacity;
         private int firstElementPosition;
         private int lastElementPosition;
@@ -31,38 +35,52 @@ namespace MyQueue
         
         public void Enqueue(T item)
         {
-            if (Count++ == capacity)
-                RebaseArray();
+            using (@lock.UsingWriterLock())
+            { 
+                if (Count++ == capacity)
+                    RebaseArray();
 
-            if (++lastElementPosition >= capacity)
-                lastElementPosition = 0;
+                if (++lastElementPosition >= capacity)
+                    lastElementPosition = 0;
 
-            array[lastElementPosition] = item;
+                array[lastElementPosition] = item;
+            }
         }
 
         public T Dequeue()
         {
-            if (Count-- == 0)
-                throw new InvalidOperationException();
+            T result;
+            
+            using (@lock.UsingWriterLock())
+            {
+                if (Count-- == 0)
+                    throw new InvalidOperationException();
 
-            var result = array[firstElementPosition];
+                result = array[firstElementPosition];
 
-            if (++firstElementPosition == capacity)
-                firstElementPosition = 0;
+                if (++firstElementPosition == capacity)
+                    firstElementPosition = 0;
+            }
 
             return result;
         }
 
         public T Peek()
         {
-            return array[firstElementPosition];
+            using (@lock.UsingReaderLock())
+            {
+                return array[firstElementPosition];
+            }
         }
 
         public void Clear()
         {
-            Count = 0;
-            firstElementPosition = 0;
-            lastElementPosition = -1;
+            using (@lock.UsingWriterLock())
+            {
+                Count = 0;
+                firstElementPosition = 0;
+                lastElementPosition = -1;
+            }
         }
 
         private void RebaseArray()
@@ -79,15 +97,11 @@ namespace MyQueue
 
         public IEnumerator<T> GetEnumerator()
         {
+            @lock.EnterReadLock();
             return new MyQueueEnumerator(this);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        public struct MyQueueEnumerator : IEnumerator<T>
+        private struct MyQueueEnumerator : IEnumerator<T>
         {
             public T Current => queue.array[cur];
             private readonly MyQueue<T> queue;
@@ -101,14 +115,15 @@ namespace MyQueue
             
             public void Dispose()
             {
+                queue.@lock.ExitReadLock();
             }
-
+            
             public bool MoveNext()
             {
-                if (cur++ == queue.lastElementPosition)
+                if (cur == queue.lastElementPosition)
                     return false;
 
-                if (cur == queue.capacity)
+                if (++cur == queue.capacity)
                     cur = 0;
 
                 return true;
