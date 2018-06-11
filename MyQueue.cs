@@ -1,41 +1,43 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace MyQueue
 {
-    public sealed class MyQueue<T>
+    public sealed class MyQueue<T> : IEnumerable<T>
     {
         private const int DefaultCapacity = 4;
         
         public int Count { get; private set; }
-        private int myCapacity;
-        private int myFirstElementPosition;
-        private int myLastElementPosition;
-        private T[] myArray;
+        private int capacity;
+        private int firstElementPosition;
+        private int lastElementPosition;
+        private T[] array;
 
         
         public MyQueue()
         {
-            myCapacity = DefaultCapacity;
-            myArray = new T[myCapacity];
+            capacity = DefaultCapacity;
+            array = new T[capacity];
             Clear();
         }
         
         public MyQueue(int capacity)
         {
-            myCapacity = capacity;
-            myArray = new T[myCapacity];
+            this.capacity = capacity;
+            array = new T[this.capacity];
             Clear();
         }
         
         public void Enqueue(T item)
         {
-            if (Count++ == myCapacity)
+            if (Count++ == capacity)
                 RebaseArray();
 
-            if (++myLastElementPosition >= myCapacity)
-                myLastElementPosition = 0;
+            if (++lastElementPosition >= capacity)
+                lastElementPosition = 0;
 
-            myArray[myLastElementPosition] = item;
+            array[lastElementPosition] = item;
         }
 
         public T Dequeue()
@@ -43,36 +45,81 @@ namespace MyQueue
             if (Count-- == 0)
                 throw new InvalidOperationException();
 
-            var result = myArray[myFirstElementPosition];
+            var result = array[firstElementPosition];
 
-            if (++myFirstElementPosition == myCapacity)
-                myFirstElementPosition = 0;
+            if (++firstElementPosition == capacity)
+                firstElementPosition = 0;
 
             return result;
         }
 
         public T Peek()
         {
-            return myArray[myFirstElementPosition];
+            return array[firstElementPosition];
         }
 
         public void Clear()
         {
             Count = 0;
-            myFirstElementPosition = 0;
-            myLastElementPosition = -1;
+            firstElementPosition = 0;
+            lastElementPosition = -1;
         }
 
         private void RebaseArray()
         {
-            var newArray = new T[myCapacity * 2];
+            var newArray = new T[capacity * 2];
 
-            Array.Copy(myArray, myFirstElementPosition, newArray, 0, myCapacity - myFirstElementPosition);
-            Array.Copy(myArray, 0, newArray, myCapacity - myFirstElementPosition, myFirstElementPosition);
+            Array.Copy(array, firstElementPosition, newArray, 0, capacity - firstElementPosition);
+            Array.Copy(array, 0, newArray, capacity - firstElementPosition, firstElementPosition);
 
-            myArray = newArray;
-            myLastElementPosition = myCapacity;
-            myCapacity *= 2;
+            array = newArray;
+            lastElementPosition = capacity - 1;
+            capacity *= 2;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return new MyQueueEnumerator(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public struct MyQueueEnumerator : IEnumerator<T>
+        {
+            public T Current => queue.array[cur];
+            private readonly MyQueue<T> queue;
+            private int cur;
+            
+            public MyQueueEnumerator(MyQueue<T> queue)
+            {
+                this.queue = queue;
+                cur = queue.firstElementPosition - 1;
+            }
+            
+            public void Dispose()
+            {
+            }
+
+            public bool MoveNext()
+            {
+                if (cur++ == queue.lastElementPosition)
+                    return false;
+
+                if (cur == queue.capacity)
+                    cur = 0;
+
+                return true;
+            }
+
+            public void Reset()
+            {
+                throw new NotImplementedException();
+            }
+            
+            object IEnumerator.Current => Current;
         }
     }
 }
