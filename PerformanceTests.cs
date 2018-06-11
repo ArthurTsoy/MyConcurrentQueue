@@ -28,6 +28,8 @@ namespace MyQueue
 
             for (var attempt = 0; attempt < NumberOfAttempts; attempt++)
             {
+                Refresh(systemQueue, myQueue, item);
+                
                 var watch = Stopwatch.StartNew();
                 for (var i = 0; i < NumberOfElements; i++)
                 {
